@@ -2,8 +2,8 @@ name: Wikiclicks Scraper
 
 on:
   schedule:
-    - cron: "0 */2 * * *"  # Runs every 2 hours (UTC)
-  workflow_dispatch:        # Allows manual triggering from GitHub UI
+    - cron: "0 */2 * * *"  # Every 2 hours
+  workflow_dispatch:
 
 jobs:
   run-scraper:
@@ -25,8 +25,8 @@ jobs:
         working-directory: scripts
 
       - name: Run scraper
+        run: python wikiclicks_scraper.py
+        working-directory: scripts
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: python wikiclicks_scraper.py
-        working-directory: scripts
