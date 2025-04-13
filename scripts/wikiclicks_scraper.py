@@ -4,19 +4,19 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from supabase import create_client, Client
+import os
 
 # === CONFIG ===
-import os
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-MAX_ARTICLES_PER_RUN = 6
-MAX_LINKS_PER_ARTICLE = 5
+MAX_ARTICLES_PER_RUN = 15
+MAX_LINKS_PER_ARTICLE = 8
 
 def get_random_category_page():
-    page_number = random.randint(1, 100)  # You can increase this over time
+    page_number = random.randint(1, 100)
     return f"https://en.wikipedia.org/w/index.php?title=Category:Articles_with_dead_external_links&pagefrom=A#{page_number}"
 
 def get_article_urls(category_url):
@@ -47,6 +47,7 @@ def extract_external_links(article_url):
         return []
 
 def check_status_and_availability(link):
+    time.sleep(random.uniform(0.5, 1.5))  # polite scraping
     try:
         status = requests.head(link["link_url"], timeout=5).status_code
     except:
@@ -79,15 +80,20 @@ def main():
 
     all_links = []
     for article in articles:
-        all_links += extract_external_links(article)
+        links = extract_external_links(article)
+        if links:
+            all_links += links
 
-    # Multithread checkers
+    print(f"🔍 Checked {len(articles)} articles, found {len(all_links)} links")
+
+    new_domain_count = 0
+
     with ThreadPoolExecutor(max_workers=6) as executor:
         enriched_links = list(executor.map(check_status_and_availability, all_links))
 
     for lead in enriched_links:
         if lead["http_status"] in [404, 410, 0] and lead["is_available"] and is_new_domain(lead["domain"]):
-            print(f"New expired domain: {lead['domain']} ({lead['link_url']})")
+            print(f"🟢 New expired domain: {lead['domain']} ({lead['link_url']})")
             supabase.table("wiki_leads").insert({
                 "article_title": lead["article_title"],
                 "article_url": lead["article_url"],
@@ -98,9 +104,10 @@ def main():
                 "is_available": lead["is_available"],
                 "discovered_at": lead["discovered_at"]
             }).execute()
+            new_domain_count += 1
             time.sleep(1)
 
-    print("Scraper finished.")
+    print(f"✅ Scraper finished. {new_domain_count} new domains added.")
 
 if __name__ == "__main__":
     main()
