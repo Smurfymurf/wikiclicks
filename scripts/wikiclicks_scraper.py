@@ -6,8 +6,9 @@ from concurrent.futures import ThreadPoolExecutor
 from supabase import create_client, Client
 
 # === CONFIG ===
-SUPABASE_URL = "https://qbjcrvrsrivohcecjbij.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiamNydnJzcml2b2hjZWNqYmlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxMDM3MTgsImV4cCI6MjA1OTY3OTcxOH0.K1D_a-ZbJwThyYmJ89Q1ZHGyb_vyYg2tFpHaJuqx8VU"
+import os
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
