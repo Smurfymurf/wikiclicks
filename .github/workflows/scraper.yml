@@ -2,7 +2,7 @@ name: Wikiclicks Scraper
 
 on:
   schedule:
-    - cron: "0 */2 * * *"
+    - cron: "0 */2 * * *"  # Runs every 2 hours
   workflow_dispatch:
 
 jobs:
@@ -24,7 +24,11 @@ jobs:
           pip install -r requirements.txt
         working-directory: scripts
 
-      - name: Run scraper
+      - name: Debug - List contents of scripts directory
+        run: ls -la
+        working-directory: scripts
+
+      - name: Run Wikiclicks scraper
         run: python wikiclicks_scraper.py
         working-directory: scripts
         env:
