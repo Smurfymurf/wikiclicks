@@ -12,17 +12,19 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          clean: false
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Debug - Print current directory and list all files
+      - name: Debug - Show repo root and structure
         run: |
-          echo "Current path:"
-          pwd
-          echo "List everything:"
+          echo "Current directory: $(pwd)"
+          echo "Listing contents:"
           ls -R
 
       - name: Install dependencies
