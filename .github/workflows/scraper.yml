@@ -24,16 +24,16 @@ jobs:
       - name: 📦 Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r wikiclicks/scripts/requirements.txt
+          pip install -r scripts/requirements.txt
 
       - name: 🧠 Debug – Show files
         run: find . -type f
 
       - name: 🧠 Confirm script path
-        run: ls -l wikiclicks/scripts/wikiclicks_scraper.py
+        run: ls -l scripts/wikiclicks_scraper.py
 
       - name: 🚀 Run Wikiclicks scraper
-        run: python wikiclicks/scripts/wikiclicks_scraper.py
+        run: python scripts/wikiclicks_scraper.py
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
