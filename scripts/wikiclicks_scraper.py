@@ -6,28 +6,30 @@ from concurrent.futures import ThreadPoolExecutor
 from supabase import create_client, Client
 import os
 
-# === CONFIG ===
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-MAX_ARTICLES_PER_RUN = 15
-MAX_LINKS_PER_ARTICLE = 8
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+}
 
-def get_random_category_page():
-    page_number = random.randint(1, 100)
-    return f"https://en.wikipedia.org/w/index.php?title=Category:Articles_with_dead_external_links&pagefrom=A#{page_number}"
+MAX_ARTICLES_PER_PAGE = 15
+MAX_LINKS_PER_ARTICLE = 8
+CATEGORY_PAGES_PER_RUN = 5
 
 def get_article_urls(category_url):
-    resp = requests.get(category_url, timeout=10)
-    soup = BeautifulSoup(resp.text, "html.parser")
-    links = soup.select("div.mw-category-group a")
-    return ["https://en.wikipedia.org" + a['href'] for a in links[:MAX_ARTICLES_PER_RUN]]
+    try:
+        resp = requests.get(category_url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(resp.text, "html.parser")
+        links = soup.select("div.mw-category-group a")
+        return ["https://en.wikipedia.org" + a['href'] for a in links[:MAX_ARTICLES_PER_PAGE]]
+    except:
+        return []
 
 def extract_external_links(article_url):
     try:
-        r = requests.get(article_url, timeout=10)
+        r = requests.get(article_url, headers=HEADERS, timeout=10)
         soup = BeautifulSoup(r.text, "html.parser")
         title = soup.select_one("#firstHeading").text.strip()
         links = []
@@ -47,7 +49,7 @@ def extract_external_links(article_url):
         return []
 
 def check_status_and_availability(link):
-    time.sleep(random.uniform(0.5, 1.5))  # polite scraping
+    time.sleep(random.uniform(1.0, 2.5))  # polite delay
     try:
         status = requests.head(link["link_url"], timeout=5).status_code
     except:
@@ -75,16 +77,23 @@ def is_new_domain(domain):
 
 def main():
     print("Scraper started...")
-    cat_url = get_random_category_page()
-    articles = get_article_urls(cat_url)
+
+    all_articles = []
+    for page in random.sample(range(1, 100), CATEGORY_PAGES_PER_RUN):
+        cat_url = f"https://en.wikipedia.org/w/index.php?title=Category:Articles_with_dead_external_links&pagefrom=A#{page}"
+        article_urls = get_article_urls(cat_url)
+        all_articles += article_urls
+        time.sleep(random.uniform(1, 2))
+
+    print(f"🔍 Pulled {len(all_articles)} articles from {CATEGORY_PAGES_PER_RUN} category pages")
 
     all_links = []
-    for article in articles:
+    for article in all_articles:
         links = extract_external_links(article)
-        if links:
-            all_links += links
+        all_links += links
+        time.sleep(random.uniform(0.5, 1.5))
 
-    print(f"🔍 Checked {len(articles)} articles, found {len(all_links)} links")
+    print(f"🔗 Found {len(all_links)} external links to scan")
 
     new_domain_count = 0
 
@@ -107,7 +116,7 @@ def main():
             new_domain_count += 1
             time.sleep(1)
 
-    print(f"✅ Scraper finished. {new_domain_count} new domains added.")
+    print(f"✅ Scraper finished: {new_domain_count} new domains added.")
 
 if __name__ == "__main__":
     main()
